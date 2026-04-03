@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TYPEBOARD (you will love it dw)</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #111;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    #container {
+      width: 90%;
+      max-width: 1100px;
+    }
+
+    h1 { font-size: 60px; }
+    h2 { font-size: 26px; }
+
+    button {
+      padding: 15px 40px;
+      font-size: 22px;
+      margin-top: 20px;
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      background: white;
+      color: black;
+    }
+
+    #game, #overlay, #win { display: none; }
+
+    #sentence {
+      font-size: 26px;
+      margin: 20px 0;
+      line-height: 1.6;
+    }
+
+    #typed {
+      font-size: 26px;
+      min-height: 50px;
+      margin-bottom: 20px;
+      word-wrap: break-word;
+    }
+
+    #input {
+      opacity: 0;
+      position: absolute;
+    }
+
+    #timer {
+      font-size: 24px;
+    }
+
+    .correct { color: #00ff88; }
+    .wrong { color: #ff4d4d; }
+
+    .party {
+      animation: bgFlash 0.3s infinite;
+    }
+
+    @keyframes bgFlash {
+      0% { background: #ff0055; }
+      25% { background: #00ffcc; }
+      50% { background: #ffff00; }
+      75% { background: #ff6600; }
+      100% { background: #111; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+
+  <!-- START -->
+  <div id="start">
+    <h1>TypeBoard</h1>
+    <h2>Get your hands over the keyboard and focus very well. (it is harder than it looks)</h2>
+    <button onclick="startGame()">Start</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="game">
+    <h2 id="level"></h2>
+    <div id="sentence"></div>
+    <div id="typed"></div>
+    <input id="input" />
+    <div id="timer"></div>
+  </div>
+
+  <!-- LOSE -->
+  <div id="overlay">
+    <h2>ARE YOU SERIOUS? YOU CAN DO BETTER. RESTART NOW.</h2>
+    <button onclick="restartGame()">Restart</button>
+  </div>
+
+  <!-- WIN -->
+  <div id="win">
+    <h1>🎉 YOU SURVIVED 🔥</h1>
+    <h2>This challenge has been completed.</h2>
+    <button onclick="restartGame()">Play Again</button>
+  </div>
+
+</div>
+
+<script>
+let level = 1;
+let time = 15;
+let timer;
+let fullSentence = "";
+
+const baseSentences = [
+  "He walked into the empty room, slowly, carefully, like something was waiting for him to make a mistake.",
+  "The lights flickered, again and again, never stopping, never giving him a moment to feel safe.",
+  "A strange sound echoed behind the door, getting louder, then quieter, then louder again, confusing him.",
+  "She turned slowly, but nothing was there, just silence, deep silence, the kind that feels wrong.",
+  "Footsteps followed him, step by step, perfectly timed, but every time he turned, nothing appeared.",
+  "The clock ticked loudly, counting something, not time, something else, something he could not understand.",
+  "Suddenly, a whisper said his name, quietly, clearly, then stopped, like it was waiting for him.",
+  "He stopped moving, completely frozen, realizing something was not right, not normal, not safe.",
+  "The shadows stretched across the walls, slowly, unnaturally, like they were alive, like they were watching.",
+  "A message appeared on the wall, letter by letter, slowly fading, forcing him to read faster.",
+  "An incomprehensible phenomenon appeared, unexpectedly, breaking everything he thought was real.",
+  "His thoughts became slower, then faster, then slower again, like his mind was losing control.",
+  "Everything around him shifted, slightly, then more, then completely, turning into something unfamiliar.",
+  "He tried to stay calm, breathe slowly, think clearly, but nothing worked, nothing helped anymore.",
+  "Everything collapsed into silence, deep silence, endless silence, and then, it all restarted."
+];
+
+function focusInput() {
+  const input = document.getElementById("input");
+  input.focus();
+  document.addEventListener("click", () => input.focus());
+}
+
+function startGame() {
+  document.getElementById("start").style.display = "none";
+  document.getElementById("game").style.display = "block";
+  document.getElementById("overlay").style.display = "none";
+  document.getElementById("win").style.display = "none";
+  document.body.classList.remove("party");
+
+  level = 1;
+  fullSentence = "";
+
+  focusInput();
+  nextLevel();
+}
+
+function nextLevel() {
+  if (level > 15) {
+    winGame();
+    return;
+  }
+
+  if (level === 1) {
+    fullSentence = baseSentences[0];
+  } else {
+    fullSentence += " " + baseSentences[level - 1];
+  }
+
+  // Add dash difficulty after level 10 😈
+  let displaySentence = fullSentence;
+  if (level > 10) {
+    displaySentence = displaySentence.replace(/,/g, " -");
+  }
+
+  document.getElementById("sentence").innerText = displaySentence;
+  document.getElementById("level").innerText = "Level " + level;
+
+  document.getElementById("typed").innerHTML = "";
+  document.getElementById("input").value = "";
+
+  focusInput();
+
+  time = Math.max(5, level * 7);
+  document.getElementById("timer").innerText = time + "s";
+
+  clearInterval(timer);
+  timer = setInterval(() => {
+    time--;
+    document.getElementById("timer").innerText = time + "s";
+
+    if (time === 0) {
+      clearInterval(timer);
+      showRestart();
+    }
+  }, 1000);
+}
+
+document.getElementById("input").addEventListener("input", function() {
+  if (this.value.length === 1 && this.value[0] === " ") {
+    this.value = "";
+    return;
+  }
+
+  let typed = this.value;
+  let display = "";
+
+  for (let i = 0; i < typed.length; i++) {
+    if (typed[i] === fullSentence[i]) {
+      display += "<span class='correct'>" + typed[i] + "</span>";
+    } else {
+      display += "<span class='wrong'>" + typed[i] + "</span>";
+    }
+  }
+
+  document.getElementById("typed").innerHTML = display;
+
+  if (typed === fullSentence) {
+    clearInterval(timer);
+    level++;
+    nextLevel();
+  }
+});
+
+function showRestart() {
+  document.getElementById("game").style.display = "none";
+  document.getElementById("overlay").style.display = "block";
+}
+
+function winGame() {
+  document.getElementById("game").style.display = "none";
+  document.getElementById("win").style.display = "block";
+  document.body.classList.add("party");
+}
+
+function restartGame() {
+  startGame();
+}
+</script>
+
+</body>
+</html>
